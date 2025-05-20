@@ -1,4 +1,3 @@
-
 #include "Login_Screen.h"
 
 
@@ -43,6 +42,12 @@ void divider(char div)
     printf("\t\n");
 }
 
+int generate_ID()
+{
+    int random = rand();
+    return random;
+}
+
 void menu()
 {
     printf("\n\t********************\tMENU\t**********************\t\n");
@@ -71,24 +76,21 @@ void menu()
 
 void saveUser(User person)
 {
+    int id = generate_ID();
     FILE *file = fopen("users.txt", "a");
     if (file == NULL)
     {
         printf("File could not be opened");
     }
-    fwrite(person.name, sizeof(char), strlen(person.name), file);
-    fwrite("\n", sizeof(char), 1, file);
-    fwrite(&person.gender, sizeof(char), 1, file);
-    fwrite("\n", sizeof(char), 1, file);
-    fwrite(person.DOB, sizeof(char), strlen(person.DOB), file);
-    fwrite("\n", sizeof(char), 1, file);
-    fwrite(person.phone, sizeof(char), strlen(person.phone), file);
-    fwrite("\n", sizeof(char), 1, file);
-    fwrite(person.pass, sizeof(char), strlen(person.pass), file);
-    fwrite("\n", sizeof(char), 1, file);
+    // Write each field with its label
+    fprintf(file, "\n%s%d\n", LABEL_ID, id);
+    fprintf(file, "%s%s\n", LABEL_NAME, person.name);
+    fprintf(file, "%s%c\n", LABEL_GENDER, person.gender);
+    fprintf(file, "%s%s\n", LABEL_DOB, person.DOB);
+    fprintf(file, "%s%s\n", LABEL_PHONE, person.phone);
+    fprintf(file, "%s%s\n", LABEL_PASSWORD, person.pass);
 
     fclose(file);     
-
 }
 
 void signUp()
@@ -133,5 +135,68 @@ void signUp()
 
 void login()
 {
+    char *name = (char *)malloc(MAX_NAME_LEN + 1);
+    char *password = (char *)malloc(MAX_PASS_LEN + 1);
+    printf("Username: ");
+    fgets(name, MAX_NAME_LEN + 1, stdin);
+    name[strcspn(name, "\n")] = 0;
+
+    printf("Password: ");
+    // Turning OFF Echo
+    // term_ECHO(0);
+    fgets(password, MAX_PASS_LEN + 1, stdin);
+    password[strcspn(password, "\n")] = 0;
+    // term_ECHO(1);
+    if(verifyUser(name, password))
+    {
+        printf("Login Successful");
+    }
+    else
+    {
+        printf("User not found");
+    }
+}
+
+bool verifyUser(char *name, char *password)
+{
+    FILE *file = fopen("users.txt", "r");
+    if (file == NULL)
+    {
+        printf("File could not be found");
+        return false;
+    }
+
+    char *file_name = (char *)malloc(MAX_NAME_LEN);
+    char *file_pass = (char *)malloc(MAX_PASS_LEN);
+    char *line = (char *)malloc(256);
+    while (fgets(line, 256, file))
+    {
+        if (strncmp(line, LABEL_NAME, strlen(LABEL_NAME)) == 0)
+        {   
+            strcpy(file_name, line + strlen(LABEL_NAME));
+            file_name[strcspn(file_name, "\n")] = 0;
+            
+        }
+        else if (strncmp(line, LABEL_PASSWORD, strlen(LABEL_PASSWORD)) == 0)
+        {
+            strcpy(file_pass, line + strlen(LABEL_PASSWORD));
+            file_pass[strcspn(file_pass, "\n")] = 0;
+        }
+        //Check if found a match
+        if (strcmp(name, file_name) == 0 && strcmp(password, file_pass) == 0)
+        {
+            free(file_name);
+            free(file_pass);
+            free(line);
+            fclose(file);
+            return true;
+        }
+    }   
+
+    free(file_name);
+    free(file_pass);
+    free(line);
+    fclose(file);
+    return false;
 
 }
